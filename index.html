@@ -13,9 +13,9 @@
 body{margin:0;color:var(--ink);font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:radial-gradient(900px 500px at 15% -5%,#d3e1f7,transparent 60%),linear-gradient(180deg,#E6ECF6,#F2F5FA)}
 .i{width:18px;height:18px;flex:none}
 .bar{position:sticky;top:10px;z-index:5;width:max-content;max-width:calc(100% - 20px);margin:10px auto 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;padding:8px;background:rgba(255,255,255,.7);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);border:1px solid rgba(255,255,255,.9);border-radius:16px;box-shadow:0 8px 30px rgba(10,47,102,.14)}
-.bar button{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:13px;font-family:inherit;padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--navy);cursor:pointer;transition:background .15s,transform .1s}
-.bar button:hover{background:var(--tint)}.bar button:active{transform:scale(.97)}
-.bar button.main{background:linear-gradient(135deg,var(--blue),var(--navy));border-color:var(--navy);color:#fff;padding:9px 20px;font-size:14px}
+.bar button,.arsip button{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:13px;font-family:inherit;padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--navy);cursor:pointer;transition:background .15s,transform .1s}
+.bar button:hover,.arsip button:hover{background:var(--tint)}.bar button:active,.arsip button:active{transform:scale(.97)}
+.bar button.main,.arsip button.main{background:linear-gradient(135deg,var(--blue),var(--navy));border-color:var(--navy);color:#fff;padding:9px 20px;font-size:14px}
 .fab{position:fixed;right:18px;bottom:18px;z-index:6;width:54px;height:54px;border-radius:50%;border:0;background:linear-gradient(135deg,var(--blue),var(--navy));color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 8px 24px rgba(10,47,102,.4)}
 .fab .i{width:24px;height:24px}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
@@ -78,13 +78,25 @@ footer{display:flex;justify-content:space-between;align-items:center;gap:14px;ma
 @media (max-width:520px){.wrap{zoom:.45}}
 @page{size:A4;margin:10mm 10mm 14mm;@bottom-right{content:"Halaman " counter(page) " dari " counter(pages);font:9px sans-serif;color:#5B6B86}}
 @media print{
-body{background:#fff}.bar,.fab{display:none}
+body{background:#fff}.bar,.fab,.arsip,.toast{display:none}
 .wrap{padding:0;overflow:visible;zoom:1}
 .sheet{width:auto;min-height:0;padding:0;border-radius:0;box-shadow:none}
 .note textarea{resize:none}
 td select.dp{background-image:none}
 tr{break-inside:avoid}thead{display:table-header-group}
 }
+button:disabled{opacity:.5;cursor:default;pointer-events:none}
+#tglBox{position:relative;cursor:pointer}#tglBox:hover{background:#F8FAFE}
+#tgl{cursor:pointer}.tglpick{position:absolute;left:10px;bottom:6px;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0}
+.arsip{width:max-content;max-width:calc(100% - 20px);margin:8px auto 0;display:grid;grid-template-columns:repeat(3,minmax(160px,250px));gap:10px;padding:12px;background:rgba(255,255,255,.78);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);border:1px solid rgba(255,255,255,.9);border-radius:16px;box-shadow:0 8px 30px rgba(10,47,102,.14)}
+.arsip label{display:flex;flex-direction:column;gap:3px;font-size:10px;font-weight:600;color:var(--muted)}
+.arsip select{width:100%;font:600 12px 'Plus Jakarta Sans',system-ui,sans-serif;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+.arsip optgroup{font-weight:700;color:var(--navy)}
+.arsip .act{grid-column:1/-1;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:11px;font-weight:600;color:var(--muted)}
+.arsip .act span:last-child{display:flex;gap:8px;flex-wrap:wrap}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:9;padding:10px 16px;border-radius:12px;background:var(--navy);color:#fff;font-size:12.5px;font-weight:600;box-shadow:0 8px 24px rgba(10,47,102,.35);max-width:90vw}
+.toast.err{background:var(--red)}
+@media (max-width:700px){.arsip{grid-template-columns:1fr;width:auto}}
 </style>
 </head>
 <body>
@@ -92,10 +104,20 @@ tr{break-inside:avoid}thead{display:table-header-group}
 
 <div class="bar">
   <button class="main" onclick="window.print()"><svg class="i"><use href="#ip"/></svg>Print</button>
+  <button id="bSave" onclick="simpan()">Simpan ke database</button>
+  <button onclick="toggleArsip()">Arsip &amp; cetak ulang</button>
   <button onclick="add(5)">Tambah 5 baris</button>
   <button onclick="removeLast()">Hapus baris terakhir</button>
-  <button onclick="resetForm()">Kosongkan form</button>
+  <button onclick="resetForm()">Form baru</button>
+  <button id="bDel" onclick="hapus()" hidden>Hapus dari database</button>
 </div>
+<section class="arsip" id="arsip" hidden aria-label="Arsip daftar hadir">
+  <label>Jenis kegiatan<select id="fJenis"></select></label>
+  <label>Bulan<select id="fBulan"></select></label>
+  <label>Tanggal &amp; agenda<select id="fTgl"></select></label>
+  <div class="act"><span id="cnt"></span><span><button id="bOpen" onclick="buka(0)" disabled>Buka / edit</button><button id="bRe" class="main" onclick="buka(1)" disabled>Cetak ulang</button><button onclick="muat()">Muat ulang</button></span></div>
+</section>
+<div class="toast" id="toast" hidden></div>
 <button class="fab" onclick="window.print()" aria-label="Print"><svg class="i"><use href="#ip"/></svg></button>
 
 <div class="wrap">
@@ -121,12 +143,12 @@ tr{break-inside:avoid}thead{display:table-header-group}
         <input type="text" class="lain" id="lain" placeholder="Sebutkan kegiatan" aria-label="Kegiatan lainnya" hidden>
       </div>
     </div>
-    <label class="c"><span>Hari, tanggal</span><input type="text" id="tgl"></label>
-    <label class="c"><span>Waktu</span><input type="text" placeholder="08.00 - selesai"></label>
-    <label class="c"><span>Tempat</span><input type="text" placeholder="Ruang meeting / area"></label>
-    <label class="c"><span>Pimpinan acara</span><input type="text"></label>
-    <label class="c"><span>Penyelenggara</span><input type="text" placeholder="Departemen / bagian"></label>
-    <label class="c"><span>Notulen / PIC</span><input type="text"></label>
+    <div class="c" id="tglBox"><span>Hari, tanggal (klik untuk ubah)</span><input type="text" id="tgl" readonly aria-label="Hari, tanggal"><input type="date" class="tglpick" id="tglIso" tabindex="-1" aria-hidden="true"></div>
+    <label class="c"><span>Waktu</span><input type="text" id="waktu" placeholder="08.00 - selesai"></label>
+    <label class="c"><span>Tempat</span><input type="text" id="tempat" placeholder="Ruang meeting / area"></label>
+    <label class="c"><span>Pimpinan acara</span><input type="text" id="pimpinan"></label>
+    <label class="c"><span>Penyelenggara</span><input type="text" id="penyelenggara" placeholder="Departemen / bagian"></label>
+    <label class="c"><span>Notulen / PIC</span><input type="text" id="notulen"></label>
   </section>
 
   <table>
@@ -157,6 +179,9 @@ tr{break-inside:avoid}thead{display:table-header-group}
 </div>
 
 <script>
+/* ====== PASANG LINK DEPLOY GOOGLE APPS SCRIPT DI SINI (berakhiran /exec) ====== */
+const API_URL='https://script.google.com/macros/s/AKfycbyq21HehioTm6Z56KAyn0ZSzD_DaYwX3MVXI9klWqb2nGheta-rCwf9g_fHdeDHch13/exec';
+
 const $=id=>document.getElementById(id), rows=$('rows');
 const DEPT=['Human Resource','Production','Quality Control','Health Safety & Environment (HSE)','Gudang','Maintenance','General Affairs','Engineering'];
 const dopt='<option></option>'+DEPT.map(d=>'<option>'+d.replace('&','&amp;')+'</option>').join('');
@@ -171,12 +196,16 @@ function count(){
 }
 function add(n){for(let i=0;i<n;i++)rows.insertAdjacentHTML('beforeend',tpl);renumber()}
 function removeLast(){if(rows.rows.length>1){rows.deleteRow(-1);renumber();count()}}
-function setDate(){$('tgl').value=new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+function setDate(iso){
+  const d=iso?new Date(iso+'T12:00:00'):new Date();
+  $('tglIso').value=iso||new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+  $('tgl').value=d.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
 function resetForm(){
   if(!confirm('Kosongkan seluruh isian form?'))return;
   document.querySelectorAll('input,textarea').forEach(i=>{if(i.type==='radio')i.checked=false;else i.value=''});
   rows.querySelectorAll('select').forEach(s=>{s.value='';s.classList.remove('sm')});
-  jk();setDate();count();
+  curId=null;jk();setDate();count();syncBtn();
 }
 function jk(){const on=$('jkLain').checked;$('lain').hidden=!on;if(!on)$('lain').value=''}
 document.querySelectorAll('input[name=jk]').forEach(r=>r.addEventListener('change',()=>{jk();if($('jkLain').checked)$('lain').focus()}));
@@ -189,7 +218,84 @@ rows.addEventListener('keydown',e=>{
   if(!n){add(1);n=tr.nextElementSibling}
   n.cells[i].querySelector('input').focus();
 });
-addEventListener('beforeprint',()=>{$('cetak').textContent='Dicetak '+new Date().toLocaleString('id-ID',{dateStyle:'long',timeStyle:'short'})});
+addEventListener('beforeprint',()=>{$('cetak').textContent=(curId?'Dicetak ulang ':'Dicetak ')+new Date().toLocaleString('id-ID',{dateStyle:'long',timeStyle:'short'})});
+/* ====== DATABASE (Google Apps Script) ====== */
+let DB=[],curId=null,tt;
+const MON=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const opt=(v,t,s)=>'<option value="'+esc(v)+'"'+(s?' selected':'')+'>'+esc(t)+'</option>';
+const ym=x=>x.tanggal.slice(0,7), lbl=k=>MON[+k.slice(5)-1]+' '+k.slice(0,4);
+const pendek=iso=>new Date(iso+'T12:00:00').toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'});
+function toast(m,err){const t=$('toast');t.textContent=m;t.className='toast'+(err?' err':'');t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,4000)}
+function busy(on){document.querySelectorAll('.bar button,.arsip button').forEach(b=>b.disabled=!!on);if(!on)$('bOpen').disabled=$('bRe').disabled=!$('fTgl').value}
+function syncBtn(){$('bDel').hidden=!curId;$('bSave').textContent=curId?'Perbarui database':'Simpan ke database'}
+async function api(action,p,body){
+  if(!/^https:\/\/script\.google\.com\/(a\/[^/]+\/)?macros\/s\//.test(API_URL))throw new Error('Link GAS belum dipasang: isi konstanta API_URL di script HTML.');
+  const r=body?await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)})
+              :await fetch(API_URL+'?'+new URLSearchParams({action,...p}));
+  const j=await r.json();if(!j.ok)throw new Error(j.error||'Permintaan gagal');return j;
+}
+function collect(){
+  const j=document.querySelector('input[name=jk]:checked');
+  const jenis=!j?'':$('jkLain').checked?($('lain').value.trim()||'Lainnya'):j.parentElement.textContent.trim();
+  return{id:curId,tanggal:$('tglIso').value,jenis,agenda:$('agenda').value.trim(),waktu:$('waktu').value,tempat:$('tempat').value,
+    pimpinan:$('pimpinan').value,penyelenggara:$('penyelenggara').value,notulen:$('notulen').value,catatan:$('cat').value,
+    peserta:[...rows.rows].map(r=>({nama:r.cells[1].querySelector('input').value,dept:r.cells[2].querySelector('select').value,
+      jabatan:r.cells[3].querySelector('input').value,ket:r.cells[5].querySelector('select').value}))};
+}
+function fill(d){
+  curId=d.id;$('agenda').value=d.agenda||'';
+  ['waktu','tempat','pimpinan','penyelenggara','notulen'].forEach(k=>$(k).value=d[k]||'');
+  $('cat').value=d.catatan||'';setDate(d.tanggal);
+  const rs=[...document.querySelectorAll('input[name=jk]')];rs.forEach(r=>r.checked=false);
+  const m=rs.find(r=>r.id!=='jkLain'&&r.parentElement.textContent.trim()===d.jenis);
+  if(m)m.checked=true;else if(d.jenis)$('jkLain').checked=true;
+  jk();if(!m&&d.jenis&&d.jenis!=='Lainnya')$('lain').value=d.jenis;
+  rows.innerHTML='';add(Math.max(14,d.peserta.length));
+  d.peserta.forEach((p,i)=>{const t=rows.rows[i],s=t.cells[2].querySelector('select');
+    t.cells[1].querySelector('input').value=p.nama||'';s.value=p.dept||'';s.classList.toggle('sm',s.value.length>22);
+    t.cells[3].querySelector('input').value=p.jabatan||'';t.cells[5].querySelector('select').value=p.ket||''});
+  count();syncBtn();
+}
+async function simpan(){
+  const d=collect();
+  if(!d.tanggal||!d.agenda){toast('Isi nama agenda dan tanggal terlebih dulu.',1);$('agenda').focus();return}
+  try{busy(1);const r=await api('save',0,{action:'save',data:d});curId=r.data.id;syncBtn();
+    toast('Tersimpan ke database ('+curId+')');if(!$('arsip').hidden)await muat()}
+  catch(e){toast(e.message,1)}finally{busy(0)}
+}
+async function hapus(){
+  if(!curId||!confirm('Hapus daftar hadir ini dari database? Isian di layar tetap ada.'))return;
+  try{busy(1);await api('delete',0,{action:'delete',id:curId});curId=null;syncBtn();toast('Dihapus dari database');if(!$('arsip').hidden)await muat()}
+  catch(e){toast(e.message,1)}finally{busy(0)}
+}
+function toggleArsip(){const a=$('arsip');a.hidden=!a.hidden;if(!a.hidden)muat()}
+async function muat(){
+  $('cnt').textContent='Memuat arsip…';
+  try{busy(1);DB=(await api('list',{})).data;renderF()}catch(e){$('cnt').textContent='';toast(e.message,1)}finally{busy(0)}
+}
+function renderF(){
+  const j=$('fJenis').value,b=$('fBulan').value,t=$('fTgl').value,J=x=>x.jenis||'(tanpa jenis)';
+  $('fJenis').innerHTML=opt('','Semua kegiatan')+[...new Set(DB.map(J))].sort().map(v=>opt(v,v+' ('+DB.filter(x=>J(x)===v).length+')',v===j)).join('');
+  const A=DB.filter(x=>!$('fJenis').value||J(x)===$('fJenis').value),ks=[...new Set(A.map(ym))].sort().reverse();
+  $('fBulan').innerHTML=opt('','Semua bulan')+[...new Set(ks.map(k=>k.slice(0,4)))].map(y=>'<optgroup label="Tahun '+y+'">'+
+    ks.filter(k=>k.startsWith(y)).map(k=>opt(k,lbl(k)+' ('+A.filter(x=>ym(x)===k).length+')',k===b)).join('')+'</optgroup>').join('');
+  const B=A.filter(x=>!$('fBulan').value||ym(x)===$('fBulan').value);
+  $('fTgl').innerHTML=opt('','— Pilih tanggal & agenda —')+ks.filter(k=>B.some(x=>ym(x)===k)).map(k=>'<optgroup label="'+lbl(k)+'">'+
+    B.filter(x=>ym(x)===k).map(x=>opt(x.id,pendek(x.tanggal)+' · '+x.agenda,x.id===t)).join('')+'</optgroup>').join('');
+  $('cnt').textContent=B.length+' daftar hadir ditemukan';$('bOpen').disabled=$('bRe').disabled=!$('fTgl').value;
+}
+async function buka(cetak){
+  const id=$('fTgl').value;if(!id)return;
+  if(!curId&&$('agenda').value&&!confirm('Isian form yang belum disimpan akan diganti. Lanjutkan?'))return;
+  try{busy(1);const d=(await api('get',{id})).data;fill(d);toast('Dimuat: '+d.agenda);if(cetak)setTimeout(()=>window.print(),400)}
+  catch(e){toast(e.message,1)}finally{busy(0)}
+}
+['fJenis','fBulan','fTgl'].forEach(i=>$(i).addEventListener('change',renderF));
+const pick=()=>{try{$('tglIso').showPicker()}catch(e){$('tglIso').focus()}};
+$('tglBox').addEventListener('click',pick);
+$('tgl').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick()}});
+$('tglIso').addEventListener('change',()=>{if($('tglIso').value)setDate($('tglIso').value)});
 add(14);setDate();
 </script>
 </body>
